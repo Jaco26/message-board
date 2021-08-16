@@ -4,6 +4,13 @@ import express from 'express'
 import history from 'connect-history-api-fallback'
 
 import { configureWebsocket } from './websocket'
+import { createDatabase } from './database/database'
+
+const db = createDatabase()
+
+db.addGroup('tenants')
+db.addGroup('food-systems')
+db.addUser('')
 
 const PORT = process.env.PORT || 3500
 
