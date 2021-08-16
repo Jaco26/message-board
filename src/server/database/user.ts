@@ -25,6 +25,12 @@ export const useUsers = (state: State) => {
         return user
     }
 
-    return { addUser }
+    const getByUsername = (username: string) => (
+        Object.values(state.users).find(user => user.username === username)
+    )
+
+    const getByUserID = (userID: string) => state.users[userID]
+
+    return { addUser, getByUsername, getByUserID }
 
 }

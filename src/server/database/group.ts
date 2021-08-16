@@ -27,6 +27,7 @@ export const useGroups = (state: State) => {
 
     const addUserToGroup = (groupID: string, userID: string) => {
         state.groups[groupID].users.push(userID)
+        state.users[userID].groups.push(groupID)
     }
 
     const addThreadToGroup = (groupID: string, threadID: string) => {

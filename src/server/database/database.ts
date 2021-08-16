@@ -15,23 +15,22 @@ export const createDatabase = () => {
         messageGraph: {}
     }
 
-    const { exists, idExists } = useUtils(state)
+    const { idExists } = useUtils(state)
+
 
     const { addUser } = useUsers(state)
     const { addThread } = useThreads(state)
     const { addMessage, removeMessage, buildMessageTree } = useMessages(state)
     const { addGroup, addUserToGroup, addThreadToGroup } = useGroups(state)
  
-    const doGetAllGroupsByUserID = (userID: string) => {
-        if (!idExists('users', userID)) {
-            throw new Error('[doGetAllGroupsByUserID] invalid userID')
-        }
-        
-    }
 
     const doGetAllGroups = () => Object.values(state.groups)
+
+    const doGetGroupsByUserID = (userID: string) => (
+        Object.values(state.groups).filter(group => group.users.includes(userID))
+    )
     
-    const doGetGroupByID = (groupID: string) => {
+    const doGetGroupByGroupID = (groupID: string) => {
         if (!idExists('groups', groupID)) {
             throw new Error('[doGetGroupByID] invalid groupID')
         }
@@ -41,14 +40,26 @@ export const createDatabase = () => {
         return { group, threads, users }
     }
 
-    const doCreateThread = () => {
-
+    const doCreateThread = (senderID: string, messageContent: string, groupID: string) => {
+        const rootMsg = addMessage(senderID, messageContent)
+        try {
+            const thread = addThread(groupID, rootMsg)
+            addThreadToGroup(groupID, thread.id)
+            return rootMsg
+        } catch (error) {
+            removeMessage(rootMsg.id)
+        }
     }
 
     return {
         doCreateThread,
-        doGetGroupByID,
-
+        doGetAllGroups,
+        doGetGroupsByUserID,
+        doGetGroupByGroupID,
+        doAddUserToGroup: addUserToGroup,
+        doCreateUser: addUser,
+        doCreateGroup: addGroup,
+        doSendMessage: addMessage,
     }
 
 }
