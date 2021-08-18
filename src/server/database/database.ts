@@ -1,66 +1,29 @@
-import { State } from './types'
-import { useUtils } from './utils'
-import { useUsers } from './user'
-import { useThreads } from './thread'
-import { useMessages } from './message'
-import { useGroups } from './group'
+import { Pool } from 'pg'
 
-export const createDatabase = () => {
-
-    const state: State = {
-        users: {},
-        groups: {},
-        messages: {},
-        threads: {},
-        messageGraph: {}
-    }
-
-    const { idExists } = useUtils(state)
-
-
-    const { addUser } = useUsers(state)
-    const { addThread } = useThreads(state)
-    const { addMessage, removeMessage, buildMessageTree } = useMessages(state)
-    const { addGroup, addUserToGroup, addThreadToGroup } = useGroups(state)
- 
-
-    const doGetAllGroups = () => Object.values(state.groups)
-
-    const doGetGroupsByUserID = (userID: string) => (
-        Object.values(state.groups).filter(group => group.users.includes(userID))
-    )
-    
-    const doGetGroupByGroupID = (groupID: string) => {
-        if (!idExists('groups', groupID)) {
-            throw new Error('[doGetGroupByID] invalid groupID')
+function parseDatabaseUrl() {
+    try {
+        const DATABASE_URL = process.env.DATABASE_URL as string
+        const [credentials, andTheRest] = DATABASE_URL
+            .slice(DATABASE_URL.indexOf('://') + 3)
+            .split('@')
+        const [user, password] = credentials.split(':')
+        const [host, andMore] = andTheRest.split(':')
+        const [port, database] = andMore.split('/')
+        return {
+            user,
+            password,
+            host,
+            database,
+            port: Number(port)
         }
-        const group = state.groups[groupID]
-        const threads = group.threads.map(threadID => buildMessageTree(state.threads[threadID].root.id))
-        const users = group.users.map(userID => state.users[userID])
-        return { group, threads, users }
+    } catch (error) {
+        throw error
     }
-
-    const doCreateThread = (senderID: string, messageContent: string, groupID: string) => {
-        const rootMsg = addMessage(senderID, messageContent)
-        try {
-            const thread = addThread(groupID, rootMsg)
-            addThreadToGroup(groupID, thread.id)
-            return rootMsg
-        } catch (error) {
-            removeMessage(rootMsg.id)
-        }
-    }
-
-    return {
-        doCreateThread,
-        doGetAllGroups,
-        doGetGroupsByUserID,
-        doGetGroupByGroupID,
-        doAddUserToGroup: addUserToGroup,
-        doCreateUser: addUser,
-        doCreateGroup: addGroup,
-        doSendMessage: addMessage,
-    }
-
 }
 
+export default new Pool({
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+    ...parseDatabaseUrl()
+})
