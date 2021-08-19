@@ -1,4 +1,9 @@
-import { Pool } from 'pg'
+import { Pool, QueryResult } from 'pg'
+
+export type DbResult<T> = Promise<QueryResult<T>>
+
+// Pool.query<any, string[]>(queryTextOrConfig: string | QueryConfig<string[]>, values?: string[] | undefined)
+
 
 function parseDatabaseUrl() {
     try {
@@ -21,9 +26,13 @@ function parseDatabaseUrl() {
     }
 }
 
-export default new Pool({
+const pool = new Pool({
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
     ...parseDatabaseUrl()
 })
+
+export const query = <T>(sql: string, values?: (string|number)[]): DbResult<T> => (
+    pool.query(sql, values)
+)
