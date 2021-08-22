@@ -1,9 +1,5 @@
 import { Pool, QueryResult } from 'pg'
 
-export type DbResult<T> = Promise<QueryResult<T>>
-
-// Pool.query<any, string[]>(queryTextOrConfig: string | QueryConfig<string[]>, values?: string[] | undefined)
-
 
 function parseDatabaseUrl() {
     try {
@@ -33,6 +29,18 @@ const pool = new Pool({
     ...parseDatabaseUrl()
 })
 
-export const query = <T>(sql: string, values?: (string|number)[]): DbResult<T> => (
+
+
+export const query = <T>(sql: string, ...values: any[]): Promise<QueryResult<T>> => (
     pool.query(sql, values)
 )
+
+export const queryRows = async <T>(sql: string, ...values: any[]): Promise<T[]> => {
+    console.log('queryRows values', values)
+    try {
+        const _result = await query<T>(sql, ...values)
+        return _result.rows
+    } catch (error) {
+        throw error
+    }
+}
