@@ -36,7 +36,6 @@ export const query = <T>(sql: string, ...values: any[]): Promise<QueryResult<T>>
 )
 
 export const queryRows = async <T>(sql: string, ...values: any[]): Promise<T[]> => {
-    console.log('queryRows values', values)
     try {
         const _result = await query<T>(sql, ...values)
         return _result.rows
